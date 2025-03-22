@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "710744194939",
+    "project_id": "coffeequest-ba152",
+    "storage_bucket": "coffeequest-ba152.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:710744194939:android:1ad04061203540ecf1c7de",
+        "android_client_info": {
+          "package_name": "uk.ac.tees.mad.coffeequest"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAL3UoGHB18utfuQ4cH6N6bZMUWzv_g2uA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
