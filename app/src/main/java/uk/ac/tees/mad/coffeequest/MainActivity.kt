@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import uk.ac.tees.mad.coffeequest.ui.screens.SplashScreen
 import uk.ac.tees.mad.coffeequest.ui.theme.CoffeeQuestTheme
 
 class MainActivity : ComponentActivity() {
@@ -19,12 +20,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             CoffeeQuestTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Text(
-                        text = "CoffeeQuest",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+                SplashScreen()
+
             }
         }
     }
