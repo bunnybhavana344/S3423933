@@ -6,7 +6,6 @@ import android.content.Intent
 import android.location.LocationManager
 import android.provider.Settings
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -47,7 +46,7 @@ import uk.ac.tees.mad.coffeequest.R
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun SplashScreen() {
+fun SplashScreen(onNavigateToHome: () -> Unit) {
     val context = LocalContext.current
     val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
     var showLocationDialog by remember { mutableStateOf(false) }
@@ -73,7 +72,16 @@ fun SplashScreen() {
         } else {
             scale.animateTo(1f, animationSpec = tween(durationMillis = 1000))
             delay(2000) // 2-second delay for demo purposes
-            // TODO: Navigate to Home Screen
+            // Navigate to Home Screen
+            onNavigateToHome()
+        }
+    }
+
+    // Handle permission result
+    LaunchedEffect(locationPermissionState.status) {
+        if (locationPermissionState.status.isGranted && !showLocationDialog) {
+            delay(2000)
+            onNavigateToHome()
         }
     }
 

@@ -11,6 +11,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import uk.ac.tees.mad.coffeequest.ui.screens.HomeScreen
 import uk.ac.tees.mad.coffeequest.ui.screens.SplashScreen
 import uk.ac.tees.mad.coffeequest.ui.theme.CoffeeQuestTheme
 
@@ -20,9 +24,25 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             CoffeeQuestTheme {
-                SplashScreen()
+                AppNavigation()
 
             }
+        }
+    }
+}
+
+@Composable
+fun AppNavigation() {
+    val navController = rememberNavController()
+
+    NavHost(navController = navController, startDestination = "splash") {
+        composable("splash") {
+            SplashScreen(
+                onNavigateToHome = { navController.navigate("home") }
+            )
+        }
+        composable("home") {
+            HomeScreen()
         }
     }
 }

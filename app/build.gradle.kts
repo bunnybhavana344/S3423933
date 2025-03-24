@@ -61,7 +61,7 @@ dependencies {
     implementation("androidx.room:room-ktx:2.6.1")
 
     implementation("com.google.accompanist:accompanist-permissions:0.34.0")
-
+    implementation("androidx.navigation:navigation-compose:2.8.8")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
