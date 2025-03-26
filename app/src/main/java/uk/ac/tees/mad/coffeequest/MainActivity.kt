@@ -42,7 +42,9 @@ fun AppNavigation() {
             )
         }
         composable("home") {
-            HomeScreen()
+            HomeScreen(
+                onViewMapClick = {}
+            )
         }
     }
 }
