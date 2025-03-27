@@ -1,5 +1,8 @@
 package uk.ac.tees.mad.coffeequest.ui.screens
 
+import android.Manifest
+import android.location.Address
+import android.location.Geocoder
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,16 +19,70 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
+import com.google.android.gms.location.LocationServices
+import kotlinx.coroutines.launch
 import uk.ac.tees.mad.coffeequest.domain.Shop
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun HomeScreen(
     onViewMapClick: () -> Unit = {}
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
+    var userLocation by remember { mutableStateOf("Fetching location...") }
+
+    // Fetch location when permission is granted
+    LaunchedEffect(locationPermissionState.status) {
+        if (locationPermissionState.status.isGranted) {
+            scope.launch {
+                val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+                try {
+                    fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                        if (location != null) {
+                            val geocoder = Geocoder(context)
+                            val addresses: List<Address>? =
+                                geocoder.getFromLocation(location.latitude, location.longitude, 1)
+                            userLocation = if (!addresses.isNullOrEmpty()) {
+                                val address = addresses[0]
+                                val addressLine = address.getAddressLine(0)
+
+                                if (!addressLine.isNullOrEmpty()) {
+                                    addressLine
+                                } else {
+                                    "Lat: ${location.latitude}, Lon: ${location.longitude}"
+                                }
+                            } else {
+                                "Lat: ${location.latitude}, Lon: ${location.longitude}"
+                            }
+                        } else {
+                            userLocation = "Location unavailable"
+                        }
+                    }
+                } catch (e: SecurityException) {
+                    userLocation = "Permission error"
+                }
+            }
+        } else {
+            locationPermissionState.launchPermissionRequest()
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -44,6 +101,14 @@ fun HomeScreen(
                 .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Display user's location
+            Text(
+                text = "Your Location: $userLocation",
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
             // Placeholder shop list
             ShopList(
                 shops = listOf(
