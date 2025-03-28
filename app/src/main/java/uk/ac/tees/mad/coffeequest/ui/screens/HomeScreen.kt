@@ -3,6 +3,10 @@ package uk.ac.tees.mad.coffeequest.ui.screens
 import android.Manifest
 import android.location.Address
 import android.location.Geocoder
+import android.location.Location
+import android.util.Log
+import android.widget.Toast
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,6 +17,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -34,7 +39,11 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.android.gms.location.LocationServices
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.toObject
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import uk.ac.tees.mad.coffeequest.domain.Shop
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
@@ -45,7 +54,9 @@ fun HomeScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
-    var userLocation by remember { mutableStateOf("Fetching location...") }
+    var userLocationString by remember { mutableStateOf("Fetching location...") }
+    var userLocation by remember { mutableStateOf<Location?>(null) }
+    var shops by remember { mutableStateOf(listOf<Shop>()) }
 
     // Fetch location when permission is granted
     LaunchedEffect(locationPermissionState.status) {
@@ -58,7 +69,22 @@ fun HomeScreen(
                             val geocoder = Geocoder(context)
                             val addresses: List<Address>? =
                                 geocoder.getFromLocation(location.latitude, location.longitude, 1)
-                            userLocation = if (!addresses.isNullOrEmpty()) {
+                            userLocation = location
+
+                            fetchShopsFromFirestore(
+                                userLocation!!,
+                                onShopsFetched = { fetchedShops ->
+                                    shops = fetchedShops
+                                },
+                                onError = { error ->
+                                    Toast.makeText(
+                                        context,
+                                        "Error fetching shops: $error",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                })
+
+                            userLocationString = if (!addresses.isNullOrEmpty()) {
                                 val address = addresses[0]
                                 val addressLine = address.getAddressLine(0)
 
@@ -71,11 +97,11 @@ fun HomeScreen(
                                 "Lat: ${location.latitude}, Lon: ${location.longitude}"
                             }
                         } else {
-                            userLocation = "Location unavailable"
+                            userLocationString = "Location unavailable"
                         }
                     }
                 } catch (e: SecurityException) {
-                    userLocation = "Permission error"
+                    userLocationString = "Permission error"
                 }
             }
         } else {
@@ -103,35 +129,93 @@ fun HomeScreen(
         ) {
             // Display user's location
             Text(
-                text = "Your Location: $userLocation",
+                text = "Your Location: $userLocationString",
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
-            // Placeholder shop list
-            ShopList(
-                shops = listOf(
-                    Shop("Coffee Haven", "123 Brew St", 4.5f),
-                    Shop("Bean Bliss", "456 Espresso Rd", 4.2f),
-                    Shop("Mocha Muse", "789 Latte Ln", 4.8f)
-                ),
-                modifier = Modifier.weight(1f)
-            )
-
-            // "View on Map" button
-            Button(
-                onClick = onViewMapClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp)
+            // Shop list from Firestore
+            if (shops.isEmpty()) {
+                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = "No shops found nearby.",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+            } else {
+                ShopList(
+                    shops = shops,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("View on Map")
+
+                Text(
+                    text = "All the shops within 100 km range will only be shown.",
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+
+                // "View on Map" button
+
+                Button(
+                    onClick = onViewMapClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                ) {
+                    Text("View on Map")
+                }
             }
         }
     }
 }
 
+// Fetch shops from Firestore and filter by proximity
+fun fetchShopsFromFirestore(
+    userLocation: Location,
+    onShopsFetched: (List<Shop>) -> Unit,
+    onError: (String) -> Unit
+) {
+    val db = FirebaseFirestore.getInstance()
+    db.collection("shops")
+        .get()
+        .addOnSuccessListener { result ->
+
+            val shopList = mutableListOf<Shop>()
+            for (document in result) {
+                val shop = document.toObject<Shop>()
+                val shopLocation = Location("").apply {
+                    latitude = shop.latitude
+                    longitude = shop.longitude
+                }
+                val distance =
+                    userLocation.distanceTo(shopLocation) / 1000 // Distance in kilometers
+                Log.d("DITA", distance.toString())
+
+                // Filter shops within 1000km
+                if (distance <= 1000) {
+                    shopList.add(shop)
+                }
+            }
+            onShopsFetched(shopList.sortedBy { shop ->
+                val shopLoc = Location("").apply {
+                    latitude = shop.latitude
+                    longitude = shop.longitude
+                }
+                userLocation.distanceTo(shopLoc)
+            }) // Sort by distance
+        }
+        .addOnFailureListener { exception ->
+            // Handle error
+            exception.localizedMessage?.let { onError(it) }
+        }
+}
 
 // Composable for the shop list
 @Composable
@@ -139,7 +223,7 @@ fun ShopList(shops: List<Shop>, modifier: Modifier = Modifier) {
     LazyColumn(modifier = modifier) {
         items(shops) { shop ->
             ShopItem(shop)
-            Divider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+            HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
         }
     }
 }
