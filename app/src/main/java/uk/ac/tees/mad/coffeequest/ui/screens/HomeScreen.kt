@@ -19,8 +19,10 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -57,6 +59,8 @@ fun HomeScreen(
     var userLocationString by remember { mutableStateOf("Fetching location...") }
     var userLocation by remember { mutableStateOf<Location?>(null) }
     var shops by remember { mutableStateOf(listOf<Shop>()) }
+    var filteredShops by remember { mutableStateOf(listOf<Shop>()) }
+    var searchQuery by remember { mutableStateOf("") }
 
     // Fetch location when permission is granted
     LaunchedEffect(locationPermissionState.status) {
@@ -109,6 +113,20 @@ fun HomeScreen(
         }
     }
 
+    // Filter shops based on search query
+    LaunchedEffect(searchQuery, shops) {
+
+        filteredShops = if (searchQuery.isEmpty()) {
+            shops // Show all nearby shops when query is empty
+
+        } else {
+            shops.filter {
+                it.name.contains(searchQuery, ignoreCase = true) ||
+                        it.address.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -134,21 +152,37 @@ fun HomeScreen(
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
-
+            // Search bar
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                label = { Text("Search shops by name or location") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                shape = MaterialTheme.shapes.medium,
+                singleLine = true,
+                colors = TextFieldDefaults.colors(
+                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                    unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            )
             // Shop list from Firestore
-            if (shops.isEmpty()) {
-                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            if (filteredShops.isEmpty()) {
+                Box(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "No shops found nearby.",
-                        style = MaterialTheme.typography.bodyLarge
+                        text = "No shops found",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.align(Alignment.Center)
                     )
                 }
             } else {
                 ShopList(
-                    shops = shops,
+                    shops = filteredShops,
                     modifier = Modifier.weight(1f)
                 )
             }
+
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
