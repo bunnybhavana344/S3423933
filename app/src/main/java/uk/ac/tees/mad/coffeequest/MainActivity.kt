@@ -16,6 +16,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.FirebaseApp
 import uk.ac.tees.mad.coffeequest.ui.screens.HomeScreen
+import uk.ac.tees.mad.coffeequest.ui.screens.MapScreen
 import uk.ac.tees.mad.coffeequest.ui.screens.SplashScreen
 import uk.ac.tees.mad.coffeequest.ui.theme.CoffeeQuestTheme
 
@@ -45,7 +46,12 @@ fun AppNavigation() {
         }
         composable("home") {
             HomeScreen(
-                onViewMapClick = {}
+                onViewMapClick = { navController.navigate("map") }
+            )
+        }
+        composable("map") {
+            MapScreen(
+                onBackClick = { navController.popBackStack() }
             )
         }
     }

@@ -61,7 +61,7 @@ fun HomeScreen(
     var shops by remember { mutableStateOf(listOf<Shop>()) }
     var filteredShops by remember { mutableStateOf(listOf<Shop>()) }
     var searchQuery by remember { mutableStateOf("") }
-
+""
     // Fetch location when permission is granted
     LaunchedEffect(locationPermissionState.status) {
         if (locationPermissionState.status.isGranted) {
