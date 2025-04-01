@@ -1,6 +1,9 @@
 package uk.ac.tees.mad.coffeequest.ui.screens
 
 import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
 import android.location.Address
 import android.location.Geocoder
 import android.location.Location
@@ -37,6 +40,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
@@ -56,12 +61,14 @@ fun HomeScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
+    val notificationPermissionState =
+        rememberPermissionState(Manifest.permission.POST_NOTIFICATIONS)
     var userLocationString by remember { mutableStateOf("Fetching location...") }
     var userLocation by remember { mutableStateOf<Location?>(null) }
     var shops by remember { mutableStateOf(listOf<Shop>()) }
     var filteredShops by remember { mutableStateOf(listOf<Shop>()) }
     var searchQuery by remember { mutableStateOf("") }
-""
+
     // Fetch location when permission is granted
     LaunchedEffect(locationPermissionState.status) {
         if (locationPermissionState.status.isGranted) {
@@ -127,6 +134,14 @@ fun HomeScreen(
         }
     }
 
+    // Show daily deal notification
+    LaunchedEffect(Unit) {
+        if (notificationPermissionState.status.isGranted) {
+            showDailyDealNotification(context)
+        } else {
+            notificationPermissionState.launchPermissionRequest()
+        }
+    }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -290,5 +305,39 @@ fun ShopItem(shop: Shop) {
                 color = MaterialTheme.colorScheme.secondary
             )
         }
+    }
+}
+
+// Function to show daily deal notification
+private fun showDailyDealNotification(context: Context) {
+    val channelId = "daily_deal_channel"
+    val notificationId = 1
+
+    // Create notification channe
+    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+        val channel = NotificationChannel(
+            channelId,
+            "Daily Deals",
+            NotificationManager.IMPORTANCE_DEFAULT
+        ).apply {
+            description = "Notifications for daily coffee shop deals"
+        }
+        val notificationManager =
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(channel)
+    }
+
+    // Building the notification
+    val notification = NotificationCompat.Builder(context, channelId)
+        .setSmallIcon(android.R.drawable.ic_dialog_info) // Use a default icon; replace with your app icon
+        .setContentTitle("Daily Deal")
+        .setContentText("Today's Deal: 20% off all lattes!")
+        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+        .setAutoCancel(true)
+        .build()
+
+    // Show the notification
+    with(NotificationManagerCompat.from(context)) {
+        notify(notificationId, notification)
     }
 }
