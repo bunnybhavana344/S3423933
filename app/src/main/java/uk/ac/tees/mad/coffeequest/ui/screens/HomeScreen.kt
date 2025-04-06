@@ -9,6 +9,7 @@ import android.location.Geocoder
 import android.location.Location
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -56,7 +57,8 @@ import uk.ac.tees.mad.coffeequest.domain.Shop
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun HomeScreen(
-    onViewMapClick: () -> Unit = {}
+    onViewMapClick: () -> Unit = {},
+    onShopClick: (Shop) -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -194,6 +196,7 @@ fun HomeScreen(
             } else {
                 ShopList(
                     shops = filteredShops,
+                    onShopClick = onShopClick,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -268,10 +271,10 @@ fun fetchShopsFromFirestore(
 
 // Composable for the shop list
 @Composable
-fun ShopList(shops: List<Shop>, modifier: Modifier = Modifier) {
+fun ShopList(shops: List<Shop>, onShopClick: (Shop) -> Unit, modifier: Modifier = Modifier) {
     LazyColumn(modifier = modifier) {
         items(shops) { shop ->
-            ShopItem(shop)
+            ShopItem(shop, onShopClick)
             HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
         }
     }
@@ -279,10 +282,11 @@ fun ShopList(shops: List<Shop>, modifier: Modifier = Modifier) {
 
 // Composable for individual shop item
 @Composable
-fun ShopItem(shop: Shop) {
+fun ShopItem(shop: Shop, onShopClick: (Shop) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable { onShopClick(shop) }
             .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
