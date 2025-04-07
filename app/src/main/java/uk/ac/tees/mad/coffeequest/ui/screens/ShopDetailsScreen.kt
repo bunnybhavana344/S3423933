@@ -13,6 +13,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -24,11 +27,21 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import uk.ac.tees.mad.coffeequest.R
+import uk.ac.tees.mad.coffeequest.database.DatabaseProvider
+import uk.ac.tees.mad.coffeequest.database.FavoriteShop
 import uk.ac.tees.mad.coffeequest.domain.Shop
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,6 +50,17 @@ fun ShopDetailsScreen(
     shop: Shop,
     onBackClick: () -> Unit
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val db = DatabaseProvider.getDatabase(context)
+    val favoriteShopDao = db.favoriteShopDao()
+    var isFavorite by remember { mutableStateOf(false) }
+
+    // Check if the shop is already a favorite
+    LaunchedEffect(shop) {
+        val favorite = favoriteShopDao.getFavoriteShopByName(shop.name)
+        isFavorite = favorite != null
+    }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -173,6 +197,41 @@ fun ShopDetailsScreen(
                     }
                 }
             }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Save to Favorites button
+            Button(
+                onClick = {
+                    scope.launch {
+                        if (isFavorite) {
+                            favoriteShopDao.deleteByName(
+                                shop.name
+                            )
+                            isFavorite = false
+                        } else {
+                            favoriteShopDao.insert(
+                                FavoriteShop(
+                                    name = shop.name,
+                                    address = shop.address,
+                                    latitude = shop.latitude,
+                                    longitude = shop.longitude,
+                                    rating = shop.rating
+                                )
+                            )
+                            isFavorite = true
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(
+                    imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                    contentDescription = if (isFavorite) "Remove from Favorites" else "Save to Favorites",
+                    modifier = Modifier.padding(end = 8.dp)
+                )
+                Text(if (isFavorite) "Remove from Favorites" else "Save to Favorites")
+            }
+
         }
     }
 }
