@@ -10,6 +10,7 @@ import android.location.Location
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -58,7 +59,8 @@ import uk.ac.tees.mad.coffeequest.domain.Shop
 @Composable
 fun HomeScreen(
     onViewMapClick: () -> Unit = {},
-    onShopClick: (Shop) -> Unit = {}
+    onShopClick: (Shop) -> Unit = {},
+    onFavoritesClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -214,14 +216,24 @@ fun HomeScreen(
                 )
 
                 // "View on Map" button
-
-                Button(
-                    onClick = onViewMapClick,
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 8.dp)
+                        .padding(vertical = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Text("View on Map")
+                    Button(
+                        onClick = onViewMapClick,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("View on Map")
+                    }
+                    Button(
+                        onClick = onFavoritesClick,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Favorites")
+                    }
                 }
             }
         }

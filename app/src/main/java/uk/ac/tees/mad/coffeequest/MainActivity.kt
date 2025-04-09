@@ -18,7 +18,9 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.google.firebase.FirebaseApp
 import com.google.gson.Gson
+import uk.ac.tees.mad.coffeequest.database.FavoriteShop
 import uk.ac.tees.mad.coffeequest.domain.Shop
+import uk.ac.tees.mad.coffeequest.ui.screens.FavoritesScreen
 import uk.ac.tees.mad.coffeequest.ui.screens.HomeScreen
 import uk.ac.tees.mad.coffeequest.ui.screens.MapScreen
 import uk.ac.tees.mad.coffeequest.ui.screens.ShopDetailsScreen
@@ -55,7 +57,8 @@ fun AppNavigation() {
                 onShopClick = { shop ->
                     val shopJson = Gson().toJson(shop)
                     navController.navigate("shopDetails/$shopJson")
-                }
+                },
+                onFavoritesClick = { navController.navigate("favorites") }
             )
         }
         composable("map") {
@@ -73,6 +76,40 @@ fun AppNavigation() {
             ShopDetailsScreen(
                 shop = shop,
                 onBackClick = { navController.popBackStack() }
+            )
+        }
+        composable("favorites") {
+            FavoritesScreen(
+                favoriteShops = listOf(
+                    FavoriteShop(
+                        name = "Coffee Shop 1",
+                        address = "123 Main St",
+                        latitude = 40.7128,
+                        longitude = -74.0060,
+                        rating = 4.5f
+                    ),
+                    FavoriteShop(
+                        name = "Coffee Shop 2",
+                        address = "456 Elm St",
+                        latitude = 37.7749,
+                        longitude = -122.4194,
+                        rating = 4.2f
+                    )
+
+                ), // in future
+                onBackClick = { navController.popBackStack() },
+                onFavoriteShopClick = { shop ->
+                    val shopJson = Gson().toJson(
+                        Shop(
+                            shop.name,
+                            shop.address,
+                            shop.latitude,
+                            shop.longitude,
+                            shop.rating
+                        )
+                    )
+                    navController.navigate("shopDetails/$shopJson")
+                }
             )
         }
     }
