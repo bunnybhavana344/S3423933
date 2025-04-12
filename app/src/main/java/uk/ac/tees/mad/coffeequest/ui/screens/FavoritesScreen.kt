@@ -20,18 +20,37 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.collectLatest
+import uk.ac.tees.mad.coffeequest.database.DatabaseProvider
 import uk.ac.tees.mad.coffeequest.database.FavoriteShop
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FavoritesScreen(
-    favoriteShops: List<FavoriteShop>,
     onBackClick: () -> Unit,
     onFavoriteShopClick: (FavoriteShop) -> Unit
 ) {
+    val context = LocalContext.current
+    val db = DatabaseProvider.getDatabase(context)
+    val favoriteShopDao = db.favoriteShopDao()
+    var favoriteShops by remember { mutableStateOf(listOf<FavoriteShop>()) }
+
+    // Fetch favorite shops from Room
+    LaunchedEffect(Unit) {
+        favoriteShopDao.getAllFavoriteShops().collectLatest { shops ->
+            favoriteShops = shops
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(

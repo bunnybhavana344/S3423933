@@ -4,13 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -18,7 +12,6 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.google.firebase.FirebaseApp
 import com.google.gson.Gson
-import uk.ac.tees.mad.coffeequest.database.FavoriteShop
 import uk.ac.tees.mad.coffeequest.domain.Shop
 import uk.ac.tees.mad.coffeequest.ui.screens.FavoritesScreen
 import uk.ac.tees.mad.coffeequest.ui.screens.HomeScreen
@@ -80,23 +73,7 @@ fun AppNavigation() {
         }
         composable("favorites") {
             FavoritesScreen(
-                favoriteShops = listOf(
-                    FavoriteShop(
-                        name = "Coffee Shop 1",
-                        address = "123 Main St",
-                        latitude = 40.7128,
-                        longitude = -74.0060,
-                        rating = 4.5f
-                    ),
-                    FavoriteShop(
-                        name = "Coffee Shop 2",
-                        address = "456 Elm St",
-                        latitude = 37.7749,
-                        longitude = -122.4194,
-                        rating = 4.2f
-                    )
-
-                ), // in future
+                // in future
                 onBackClick = { navController.popBackStack() },
                 onFavoriteShopClick = { shop ->
                     val shopJson = Gson().toJson(
